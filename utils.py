@@ -1,6 +1,10 @@
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.metrics import mean_squared_error
+import math
+from scipy.stats import wishart
 
 
 def train_prep(train_data, d):
@@ -28,7 +32,7 @@ def train_prep(train_data, d):
     
     return (X_train_data, y_train_data, sc)
 
-def predict_model_one_by_one(model, f_predict, train_data, T_final, sc, d):
+def predict_model_one_by_one(model, train_data, T_final, sc, d):
     # Select only the closing price
     train_data = train_data['Close']
     
@@ -50,7 +54,7 @@ def predict_model_one_by_one(model, f_predict, train_data, T_final, sc, d):
         X_test_data.iloc[1][f"Close_{d}"] = 0 # Pour retirer le NaN (la deuxième ligne ne nous intéresse pas)
         
         # Prédiction
-        pred = f_predict(model, X_test_data)
+        pred = model.predict(X_test_data)
         #print(f"pred_{i}=", pred)
         predicted_stock_price.append(pred[0])
         
@@ -66,3 +70,40 @@ def predict_model_one_by_one(model, f_predict, train_data, T_final, sc, d):
     predicted_stock_price = sc.inverse_transform(np.array(predicted_stock_price).reshape(-1, 1))
     
     return predicted_stock_price
+
+def generate_covariance_matrix(d, method="wishart"):
+    if method == "wishart":
+        # Génération des matrices de covariances pour les X selon une Wishart(I, d-1, d-1)
+        C_s = wishart.rvs(df=d-1, scale=np.eye(d-1))
+        C_b = wishart.rvs(df=d-1, scale=np.eye(d-1))
+    
+    elif method == "spiked":
+        # Génération des matrices de covariances pour les X selon le modèle de covariance spiked
+        u = np.random.uniform(low=-1, high=1, size=d-1)
+        v = np.random.uniform(low=-1, high=1, size=d-1)
+        rho = d
+        C_s = np.eye(d-1) + rho*np.dot(np.transpose(u), u)
+        C_b = np.eye(d-1) + rho*np.dot(np.transpose(v), v)
+        
+    else:
+        print("Please choose a method between 'spiked' and 'wishart'.")
+    return C_s, C_b
+
+def plot_predictions(test, predicted):
+    plt.plot(test, color='red',label='Cours vrai')
+    plt.plot(predicted, color='blue',label='Cours prédit')
+    plt.xlabel('Temps')
+    plt.ylabel('Cours de fermeture (USD)')
+    plt.legend()
+    plt.show()
+
+def return_rmse(test, predicted):
+    rmse = math.sqrt(mean_squared_error(test, predicted))
+    print("RMSE = {}.".format(rmse))
+    return rmse
+
+def return_relative_bias(test, predicted):
+    rb = np.sum(predicted - test) / np.sum(test)
+    
+    return rb 
+

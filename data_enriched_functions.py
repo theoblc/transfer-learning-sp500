@@ -56,6 +56,11 @@ def compute_gamma_hat(lamda, X_b, X_t, beta_hat_b, beta_hat):
     
     return gamma_hat
 
+def compute_gamma_hat_bis(beta_hat_b, beta_hat_s):
+    gamma_hat = beta_hat_b - beta_hat_s
+    
+    return gamma_hat
+
 def compute_sigma2_hat(X, Y, beta_hat, n, d):
     # calcul de la norme au carré
     vector = Y - np.dot(X, beta_hat)
@@ -103,3 +108,9 @@ def compute_EQM(lamda, sigma2_s_hat, sigma2_b_hat, eigenvals, X_s, X_b, X_t, bet
     eqm = np.sum(vector)
     
     return eqm
+
+def compute_lamda(sigma2_s_hat, eigenvals, kappa2_hat, d):
+    suum = np.sum([(sigma2_s_hat*eigenvals[i]*(3+4*eigenvals[i]) + kappa2_hat) for i in range(d)])
+    
+    lamda = d / suum
+    return lamda
