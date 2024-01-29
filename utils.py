@@ -103,7 +103,8 @@ def return_rmse(test, predicted):
     return rmse
 
 def return_relative_bias(test, predicted):
-    rb = np.sum(predicted - test) / np.sum(test)
-    
-    return rb 
+    return np.sum(predicted - test) / np.sum(test)
+
+def return_rb_gamma(n, gamma):
+    return math.sqrt(n)*np.linalg.norm(gamma, ord=1)
 
